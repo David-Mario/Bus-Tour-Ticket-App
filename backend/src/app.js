@@ -4,6 +4,8 @@ const morgan = require("morgan");
 
 const toursRoutes = require("./routes/tours.routes");
 const ordersRoutes = require("./routes/orders.routes");
+const tripsRoutes = require("./routes/trips.routes");
+
 
 const app = express();
 
@@ -14,6 +16,8 @@ app.use(morgan("dev"));
 
 app.use("/api/tours", toursRoutes);
 app.use("/api/orders", ordersRoutes);
+app.use("/api/trips", tripsRoutes);
+
 
 // Health check
 app.get("/health", (req, res) => {
