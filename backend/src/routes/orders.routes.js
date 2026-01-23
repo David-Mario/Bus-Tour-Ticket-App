@@ -1,9 +1,21 @@
 const express = require("express");
+const authMiddleware = require("../middlewares/auth.middleware");
+
 const router = express.Router();
 
-// GET /api/orders
-router.get("/", (req, res) => {
-  res.json({ message: "User orders" });
+router.post("/", authMiddleware, (req, res) => {
+  res.status(201).json({
+    message: "Order created",
+    user: req.user,
+  });
+});
+
+router.get("/my", authMiddleware, (req, res) => {
+  res.json({
+    message: "User orders",
+    userId: req.user.uid,
+  });
 });
 
 module.exports = router;
+

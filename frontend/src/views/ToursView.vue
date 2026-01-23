@@ -1,21 +1,74 @@
+<script setup>
+import { ref, onMounted } from "vue";
+import { auth } from "@/services/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const trips = ref([]);
+const user = ref(null);
+
+const fetchTrips = async () => {
+  const response = await fetch("http://localhost:5000/api/trips");
+  const data = await response.json();
+
+  trips.value = data;
+};
+
+
+const logout = async () => {
+  await signOut(auth);
+};
+
+const buyTicket = (tripId) => {
+  router.push(`/buy/${tripId}`);
+};
+
+onMounted(() => {
+   onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const token = await user.getIdToken();
+      console.log("FIREBASE TOKEN:", token);
+    }
+  });
+  fetchTrips();
+  onAuthStateChanged(auth, (u) => {
+    user.value = u;
+  });
+});
+</script>
 <template>
-  <Navbar />
-  <div class="container">
-    <TourCard title="Italy Tour" duration="7 days" />
-    <TourCard title="France Tour" duration="5 days" />
+  <div>
+    <h1>Bus Trips</h1>
+
+    <!-- Auth status -->
+    <div v-if="user">
+      <p>Logged in as {{ user.email }}</p>
+      <button @click="logout">Logout</button>
+    </div>
+
+    <div v-else>
+      <p>Not logged in</p>
+    </div>
+
+    <hr />
+
+    <!-- Trips list -->
+    <div v-if="!trips.length">
+  <p>No trips available</p>
+</div>
+
+    <div v-for="trip in trips" :key="trip.tripId" style="margin-bottom: 20px">
+      <p>
+        <strong>{{ trip.startCity }}</strong> →
+        <strong>{{ trip.endCity }}</strong>
+      </p>
+
+      <p>Price: {{ trip.price }} RON</p>
+
+      <button @click="buyTicket(trip.tripId)">
+        Buy ticket
+      </button>
+    </div>
   </div>
 </template>
-
-<script setup>
-import Navbar from "../components/Navbar.vue";
-import TourCard from "../components/TourCard.vue";
-</script>
-
-<style scoped>
-.container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-}
-</style>

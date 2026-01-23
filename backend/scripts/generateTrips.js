@@ -1,5 +1,5 @@
 const { faker } = require("@faker-js/faker");
-const db = require("../src/config/firebase");
+const db = require("../src/config/firebaseAdmin");
 
 const CITIES = [
   "Bucharest", "Cluj-Napoca", "Timisoara", "Iasi", "Brasov",
