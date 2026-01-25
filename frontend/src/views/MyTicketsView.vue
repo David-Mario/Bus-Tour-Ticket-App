@@ -1,93 +1,54 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { auth } from "@/services/firebase";
+import { onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useOrdersStore } from "@/stores/orders";
+import { useAuthStore } from "@/stores/auth";
 
 const router = useRouter();
 const route = useRoute();
-const orders = ref([]);
-const user = ref(null);
-const loading = ref(false);
-const error = ref("");
+const ordersStore = useOrdersStore();
+const authStore = useAuthStore();
 
-const fetchOrders = async () => {
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
-    router.push("/login");
-    return;
-  }
+const confirmedOrders = computed(() => {
+  return ordersStore.orders.filter((o) => o.status === "confirmed");
+});
 
-  loading.value = true;
-  error.value = "";
-  try {
-    const token = await currentUser.getIdToken();
-    const response = await fetch("http://localhost:5000/api/orders/my", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+const cancelledOrders = computed(() => {
+  return ordersStore.orders.filter((o) => o.status === "cancelled");
+});
 
-    const json = await response.json();
-    if (json.success && json.data) {
-      orders.value = json.data;
-    } else {
-      error.value = json.message || "Eroare la încărcarea biletelor";
-    }
-  } catch (e) {
-    console.error(e);
-    error.value = "Eroare la încărcarea biletelor";
-  } finally {
-    loading.value = false;
-  }
-};
-
-const cancelOrder = async (orderId, trip) => {
+const handleCancel = async (orderId) => {
   if (!confirm("Ești sigur că vrei să anulezi această rezervare?")) {
     return;
   }
 
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
-
-  try {
-    const token = await currentUser.getIdToken();
-    const response = await fetch(`http://localhost:5000/api/orders/${orderId}/cancel`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status: "cancelled" }),
-    });
-
-    const json = await response.json();
-    if (json.success) {
-      await fetchOrders();
-      alert("Rezervarea a fost anulată");
-    } else {
-      alert(json.message || "Eroare la anulare");
-    }
-  } catch (e) {
-    console.error(e);
-    alert("Eroare la anulare");
+  const success = await ordersStore.cancelOrder(orderId);
+  if (success) {
+    alert("Rezervarea a fost anulată cu succes!");
+  } else {
+    alert("Eroare la anulare. Verifică că ai cel puțin 2 zile înainte de plecare.");
   }
 };
 
-const logout = async () => {
-  await signOut(auth);
-  router.push("/");
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("ro-RO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 onMounted(() => {
-  onAuthStateChanged(auth, (u) => {
-    user.value = u;
-    if (u) {
-      fetchOrders();
-    } else {
-      router.push("/login");
-    }
-  });
+  if (!authStore.user) {
+    router.push("/login");
+    return;
+  }
+
+  ordersStore.fetchMyOrders();
 
   if (route.query.session_id) {
     setTimeout(() => {
@@ -98,56 +59,264 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="my-tickets-view">
     <h1>Biletele mele</h1>
 
-    <div v-if="user">
-      <p>Logat ca: {{ user.email }}</p>
-      <button @click="logout">Logout</button>
+    <div v-if="ordersStore.loading" class="loading">
+      <p>Se încarcă biletele...</p>
     </div>
 
-    <hr />
+    <div v-else-if="ordersStore.error" class="error">
+      <p>{{ ordersStore.error }}</p>
+    </div>
 
-    <div v-if="loading">Se încarcă...</div>
-    <p v-if="error" style="color: red;">{{ error }}</p>
-
-    <div v-if="!loading && orders.length === 0">
+    <div v-else-if="ordersStore.orders.length === 0" class="empty">
       <p>Nu ai bilete rezervate.</p>
       <button @click="router.push('/')">Vezi călătorii disponibile</button>
     </div>
 
-    <div v-for="order in orders" :key="order.orderId" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
-      <div v-if="order.trip">
-        <h3>
-          {{ order.trip.startCity }} → {{ order.trip.endCity }}
-        </h3>
-        <p>Plecare: {{ order.trip.startDate }} {{ order.trip.startTime }}</p>
-        <p>Sosire: {{ order.trip.endDate }} {{ order.trip.endTime }}</p>
-        <p>Locuri: {{ order.seatsCount }}</p>
-        <p>Preț total: {{ order.totalPrice }} RON</p>
-        <p>
-          Status:
-          <strong :style="{ color: order.status === 'confirmed' ? 'green' : 'red' }">
-            {{ order.status === 'confirmed' ? 'Confirmat' : 'Anulat' }}
-          </strong>
-        </p>
-        <p v-if="order.createdAt">
-          Rezervat pe: {{ new Date(order.createdAt).toLocaleString('ro-RO') }}
-        </p>
+    <div v-else>
+      <div v-if="confirmedOrders.length > 0" class="orders-section">
+        <h2>Rezervări active ({{ confirmedOrders.length }})</h2>
+        <div class="orders-list">
+          <div
+            v-for="order in confirmedOrders"
+            :key="order.orderId"
+            class="order-card"
+          >
+            <div v-if="order.trip" class="order-content">
+              <div class="order-header">
+                <h3>
+                  {{ order.trip.startCity }} → {{ order.trip.endCity }}
+                </h3>
+                <span class="status-badge confirmed">Confirmat</span>
+              </div>
 
-        <button
-          v-if="order.status === 'confirmed'"
-          @click="cancelOrder(order.orderId, order.trip)"
-          style="background: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;"
-        >
-          Anulează rezervarea
-        </button>
+              <div class="order-details">
+                <div class="detail-row">
+                  <span class="label">Plecare:</span>
+                  <span class="value">
+                    {{ order.trip.startDate }} {{ order.trip.startTime }}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Sosire:</span>
+                  <span class="value">
+                    {{ order.trip.endDate }} {{ order.trip.endTime }}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Locuri:</span>
+                  <span class="value">{{ order.seatsCount }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Preț total:</span>
+                  <span class="value price">{{ order.totalPrice }} RON</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Rezervat pe:</span>
+                  <span class="value">{{ formatDate(order.createdAt) }}</span>
+                </div>
+              </div>
+
+              <button class="cancel-btn" @click="handleCancel(order.orderId)">
+                Anulează rezervarea
+              </button>
+            </div>
+            <div v-else class="order-error">
+              <p>Eroare: Detaliile călătoriei nu sunt disponibile</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div v-else>
-        <p>Comandă #{{ order.orderId }}</p>
-        <p>Status: {{ order.status }}</p>
-        <p>Eroare: Detaliile călătoriei nu sunt disponibile</p>
+
+      <div v-if="cancelledOrders.length > 0" class="orders-section">
+        <h2>Rezervări anulate ({{ cancelledOrders.length }})</h2>
+        <div class="orders-list">
+          <div
+            v-for="order in cancelledOrders"
+            :key="order.orderId"
+            class="order-card cancelled"
+          >
+            <div v-if="order.trip" class="order-content">
+              <div class="order-header">
+                <h3>
+                  {{ order.trip.startCity }} → {{ order.trip.endCity }}
+                </h3>
+                <span class="status-badge cancelled-badge">Anulat</span>
+              </div>
+              <div class="order-details">
+                <div class="detail-row">
+                  <span class="label">Anulat pe:</span>
+                  <span class="value">{{ formatDate(order.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.my-tickets-view {
+  width: 100%;
+}
+
+h1 {
+  margin-bottom: 2rem;
+  color: #333;
+  font-size: 2rem;
+}
+
+h2 {
+  margin: 2rem 0 1rem;
+  color: #666;
+  font-size: 1.25rem;
+}
+
+.loading,
+.error,
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error {
+  color: #f44336;
+}
+
+.empty button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.orders-section {
+  margin-bottom: 3rem;
+}
+
+.orders-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+}
+
+.order-card.cancelled {
+  opacity: 0.7;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.order-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.status-badge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.status-badge.confirmed {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.cancelled-badge {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.order-details {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-row .label {
+  color: #666;
+  font-size: 0.9375rem;
+}
+
+.detail-row .value {
+  font-weight: 600;
+  color: #333;
+}
+
+.detail-row .value.price {
+  color: #1976d2;
+  font-size: 1.125rem;
+}
+
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.cancel-btn:hover {
+  background: #d32f2f;
+}
+
+.order-error {
+  color: #f44336;
+  padding: 1rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+</style>

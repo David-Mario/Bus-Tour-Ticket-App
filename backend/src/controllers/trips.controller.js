@@ -55,6 +55,7 @@ exports.createTrip = async (req, res, next) => {
       price,
       availableSeats,
       stops,
+      description,
     } = req.body;
 
     const tripId = generateTripId(startCity.trim(), endCity.trim(), startDate);
@@ -72,6 +73,7 @@ exports.createTrip = async (req, res, next) => {
       price,
       availableSeats,
       stops: stops || [],
+      description: description?.trim() || "",
       createdAt,
     };
 
@@ -97,7 +99,7 @@ exports.updateTrip = async (req, res, next) => {
     const ALLOWED = [
       "startCity", "endCity", "startDate", "startTime",
       "endDate", "endTime", "durationHours", "price",
-      "availableSeats", "stops",
+      "availableSeats", "stops", "description",
     ];
     const updates = {};
     for (const k of ALLOWED) {

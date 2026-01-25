@@ -72,6 +72,11 @@ const tripCreate = [
       );
     })
     .withMessage("Fiecare oprire trebuie să aibă city (string) și stopDurationMinutes (număr >= 0)"),
+  body("description")
+    .optional()
+    .trim()
+    .isString()
+    .withMessage("Descrierea trebuie să fie un string"),
 ];
 
 const tripUpdate = [
@@ -103,6 +108,11 @@ const tripUpdate = [
       );
     })
     .withMessage("Fiecare oprire: city (string), stopDurationMinutes (>= 0)"),
+  body("description")
+    .optional()
+    .trim()
+    .isString()
+    .withMessage("Descrierea trebuie să fie un string"),
 ];
 
 const tripIdParam = [

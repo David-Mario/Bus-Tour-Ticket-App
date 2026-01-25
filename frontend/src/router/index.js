@@ -6,6 +6,7 @@ import LoginView from "../views/LoginView.vue";
 import RegisterView from "../views/RegisterView.vue";
 import BuyTicketView from "../views/BuyTicketView.vue";
 import MyTicketsView from "../views/MyTicketsView.vue";
+import TripDetailsView from "../views/TripDetailsView.vue";
 
 const routes = [
   {
@@ -20,6 +21,10 @@ const routes = [
   {
     path: "/register",
     component: RegisterView,
+  },
+  {
+    path: "/trip/:tripId",
+    component: TripDetailsView,
   },
   {
     path: "/buy/:tripId",
