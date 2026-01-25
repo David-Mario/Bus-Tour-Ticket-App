@@ -9,10 +9,17 @@ const trips = ref([]);
 const user = ref(null);
 
 const fetchTrips = async () => {
-  const response = await fetch("http://localhost:5000/api/trips");
-  const data = await response.json();
-
-  trips.value = data;
+  try {
+    const response = await fetch("http://localhost:5000/api/trips");
+    const json = await response.json();
+    trips.value = json.data ?? [];
+    if (!response.ok) {
+      console.error("Eroare API:", json.message ?? response.statusText);
+    }
+  } catch (e) {
+    console.error("Eroare la încărcarea călătoriilor:", e);
+    trips.value = [];
+  }
 };
 
 

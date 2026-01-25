@@ -5,6 +5,7 @@ import ToursView from "../views/ToursView.vue";
 import LoginView from "../views/LoginView.vue";
 import RegisterView from "../views/RegisterView.vue";
 import BuyTicketView from "../views/BuyTicketView.vue";
+import MyTicketsView from "../views/MyTicketsView.vue";
 
 const routes = [
   {
@@ -23,6 +24,11 @@ const routes = [
   {
     path: "/buy/:tripId",
     component: BuyTicketView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/my-tickets",
+    component: MyTicketsView,
     meta: { requiresAuth: true },
   },
 ];

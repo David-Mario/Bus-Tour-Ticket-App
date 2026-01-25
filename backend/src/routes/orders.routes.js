@@ -1,21 +1,35 @@
 const express = require("express");
-const authMiddleware = require("../middlewares/auth.middleware");
-
 const router = express.Router();
+const authMiddleware = require("../middlewares/auth.middleware");
+const validate = require("../middlewares/validate.middleware");
+const ordersController = require("../controllers/orders.controller");
+const { orderCreate, orderCancel, orderIdParam } = require("../validators/order.validator");
 
-router.post("/", authMiddleware, (req, res) => {
-  res.status(201).json({
-    message: "Order created",
-    user: req.user,
-  });
-});
+router.post(
+  "/",
+  authMiddleware,
+  orderCreate,
+  validate,
+  ordersController.createOrder
+);
 
-router.get("/my", authMiddleware, (req, res) => {
-  res.json({
-    message: "User orders",
-    userId: req.user.uid,
-  });
-});
+router.get("/my", authMiddleware, ordersController.getMyOrders);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  orderIdParam,
+  validate,
+  ordersController.getOrderById
+);
+
+router.patch(
+  "/:id/cancel",
+  authMiddleware,
+  orderIdParam,
+  orderCancel,
+  validate,
+  ordersController.cancelOrder
+);
 
 module.exports = router;
-

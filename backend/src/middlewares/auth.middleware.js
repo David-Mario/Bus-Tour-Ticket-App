@@ -4,6 +4,7 @@ async function authMiddleware(req, res, next) {
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
+      success: false,
       message: "Missing or invalid Authorization header",
     });
   }
@@ -21,6 +22,7 @@ async function authMiddleware(req, res, next) {
     next();
   } catch (error) {
     return res.status(401).json({
+      success: false,
       message: "Invalid or expired token",
     });
   }
