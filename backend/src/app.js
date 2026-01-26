@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 
-const toursRoutes = require("./routes/tours.routes");
 const ordersRoutes = require("./routes/orders.routes");
 const tripsRoutes = require("./routes/trips.routes");
 const stripeRoutes = require("./routes/stripe.routes");
@@ -23,7 +22,7 @@ app.post(
 
 app.use(express.json());
 
-app.use("/api/tours", toursRoutes);
+
 app.use("/api/orders", ordersRoutes);
 app.use("/api/trips", tripsRoutes);
 app.use("/api/stripe", stripeRoutes);

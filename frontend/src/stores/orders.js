@@ -66,11 +66,37 @@ export const useOrdersStore = defineStore("orders", () => {
     }
   };
 
+  const deleteOrder = async (orderId) => {
+    const user = auth.currentUser;
+    if (!user) return false;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const json = await response.json();
+      if (json.success) {
+        await fetchMyOrders();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
   return {
     orders,
     loading,
     error,
     fetchMyOrders,
     cancelOrder,
+    deleteOrder,
   };
 });

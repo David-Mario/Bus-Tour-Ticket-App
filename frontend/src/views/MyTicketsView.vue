@@ -3,11 +3,15 @@ import { onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useOrdersStore } from "@/stores/orders";
 import { useAuthStore } from "@/stores/auth";
+import { useTripsStore } from "@/stores/trips";
+import { useToast } from "vue-toastification";
 
 const router = useRouter();
 const route = useRoute();
 const ordersStore = useOrdersStore();
 const authStore = useAuthStore();
+const tripsStore = useTripsStore();
+const toast = useToast();
 
 const confirmedOrders = computed(() => {
   return ordersStore.orders.filter((o) => o.status === "confirmed");
@@ -24,9 +28,22 @@ const handleCancel = async (orderId) => {
 
   const success = await ordersStore.cancelOrder(orderId);
   if (success) {
-    alert("Rezervarea a fost anulată cu succes!");
+    toast.success("Rezervarea a fost anulată cu succes!");
   } else {
-    alert("Eroare la anulare. Verifică că ai cel puțin 2 zile înainte de plecare.");
+    toast.error("Eroare la anulare. Verifică că ai cel puțin 2 zile înainte de plecare.");
+  }
+};
+
+const handleDeleteCancelled = async (orderId) => {
+  if (!confirm("Ești sigur că vrei să ștergi această rezervare anulată?")) {
+    return;
+  }
+
+  const success = await ordersStore.deleteOrder(orderId);
+  if (success) {
+    toast.success("Rezervarea anulată a fost ștearsă!");
+  } else {
+    toast.error("Eroare la ștergere.");
   }
 };
 
@@ -42,18 +59,45 @@ const formatDate = (dateStr) => {
   });
 };
 
-onMounted(() => {
+const verifyStripeSession = async (sessionId) => {
+  try {
+    const token = await authStore.getIdToken();
+    const response = await fetch(`http://localhost:5000/api/stripe/verify-session/${sessionId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      // Order created or already exists, refresh orders and trips to update available seats
+      await Promise.all([
+        ordersStore.fetchMyOrders(),
+        tripsStore.fetchTrips()
+      ]);
+      toast.success("Plata a fost procesată cu succes! Biletul tău apare mai jos.");
+    } else {
+      toast.warning(data.message || "Plata nu a fost finalizată");
+    }
+  } catch (error) {
+    console.error("Eroare la verificarea sesiunii Stripe:", error);
+    toast.error("Eroare la verificarea plății. Încearcă să reîncarci pagina.");
+  }
+};
+
+onMounted(async () => {
   if (!authStore.user) {
     router.push("/login");
     return;
   }
 
-  ordersStore.fetchMyOrders();
-
+  // If coming from Stripe redirect, verify session and create order if needed
   if (route.query.session_id) {
-    setTimeout(() => {
-      alert("Plata a fost procesată cu succes! Biletul tău apare mai jos.");
-    }, 500);
+    await verifyStripeSession(route.query.session_id);
+    // Remove session_id from URL
+    router.replace({ query: {} });
+  } else {
+    ordersStore.fetchMyOrders();
   }
 });
 </script>
@@ -151,6 +195,9 @@ onMounted(() => {
                   <span class="value">{{ formatDate(order.createdAt) }}</span>
                 </div>
               </div>
+              <button class="delete-btn" @click="handleDeleteCancelled(order.orderId)">
+                Șterge
+              </button>
             </div>
           </div>
         </div>
@@ -162,6 +209,7 @@ onMounted(() => {
 <style scoped>
 .my-tickets-view {
   width: 100%;
+  max-width: 100%;
 }
 
 h1 {
@@ -300,6 +348,23 @@ h2 {
 
 .cancel-btn:hover {
   background: #d32f2f;
+}
+
+.delete-btn {
+  padding: 0.75rem 1.5rem;
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.delete-btn:hover {
+  background: #555;
 }
 
 .order-error {

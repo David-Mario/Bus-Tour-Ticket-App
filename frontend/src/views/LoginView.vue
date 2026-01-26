@@ -3,8 +3,10 @@ import { ref } from "vue";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import { useRouter } from "vue-router";
+import { useToast } from "vue-toastification";
 
 const router = useRouter();
+const toast = useToast();
 
 const email = ref("");
 const password = ref("");
@@ -24,10 +26,12 @@ const login = async () => {
   loading.value = true;
   try {
     await signInWithEmailAndPassword(auth, email.value, password.value);
+    toast.success("Autentificare reușită!");
     const redirectPath = router.currentRoute.value.query.redirect || "/";
     router.push(redirectPath);
   } catch (err) {
     error.value = "Email sau parolă greșită";
+    toast.error("Email sau parolă greșită");
   } finally {
     loading.value = false;
   }
@@ -44,16 +48,16 @@ const closeResetModal = () => {
 
 const resetPassword = async () => {
   if (!resetEmail.value) {
-    alert("Introdu adresa de email");
+    toast.warning("Introdu adresa de email");
     return;
   }
 
   try {
     await sendPasswordResetEmail(auth, resetEmail.value);
-    alert("Email de resetare trimis. Verifică inbox-ul.");
+    toast.success("Email de resetare trimis. Verifică inbox-ul.");
     closeResetModal();
   } catch (err) {
-    alert(err.message);
+    toast.error(err.message || "Eroare la trimiterea email-ului de resetare");
   }
 };
 
@@ -144,10 +148,10 @@ const goToRegister = () => {
 .auth-card {
   background: white;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 2.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 800px;
 }
 
 h2 {
@@ -171,16 +175,19 @@ h2 {
 
 .form-group input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.875rem 1rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  background: #fafafa;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #1976d2;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .form-group input:disabled {

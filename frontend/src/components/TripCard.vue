@@ -63,6 +63,7 @@ const viewDetails = () => {
       <div class="date">{{ formatDate(trip.startDate) }}</div>
     </div>
 
+
     <div class="trip-details">
       <div class="detail-item">
         <span class="label">Durată:</span>
@@ -153,6 +154,21 @@ const viewDetails = () => {
   font-size: 0.875rem;
   color: #666;
   font-weight: 500;
+}
+
+.trip-description {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #1976d2;
+}
+
+.trip-description p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #555;
+  line-height: 1.5;
 }
 
 .trip-details {

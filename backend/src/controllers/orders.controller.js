@@ -198,3 +198,36 @@ exports.cancelOrder = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.deleteOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.uid;
+
+    const orderRef = db.collection(ORDERS_COLLECTION).doc(id);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+      throw new AppError(404, "Comanda nu a fost găsită");
+    }
+
+    const order = orderSnap.data();
+    if (order.userId !== userId) {
+      throw new AppError(403, "Doar posesorul rezervării poate șterge");
+    }
+
+    if (order.status !== "cancelled") {
+      throw new AppError(400, "Doar comenzile anulate pot fi șterse");
+    }
+
+    await orderRef.delete();
+
+    res.status(200).json({
+      success: true,
+      message: "Rezervarea anulată a fost ștearsă",
+      data: { orderId: id },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

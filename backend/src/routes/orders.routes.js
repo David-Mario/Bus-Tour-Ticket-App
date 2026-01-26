@@ -32,4 +32,12 @@ router.patch(
   ordersController.cancelOrder
 );
 
+router.delete(
+  "/:id",
+  authMiddleware,
+  orderIdParam,
+  validate,
+  ordersController.deleteOrder
+);
+
 module.exports = router;

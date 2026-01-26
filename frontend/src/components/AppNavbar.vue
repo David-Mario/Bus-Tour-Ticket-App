@@ -14,6 +14,10 @@ const showSearchBar = computed(() => {
   return route.path === "/";
 });
 
+const isFullWidthPage = computed(() => {
+  return route.path === "/login" || route.path === "/register" || route.path === "/my-tickets";
+});
+
 const handleLogout = async () => {
   await authStore.logout();
   router.push("/");
@@ -29,7 +33,7 @@ const goToLogin = () => {
 </script>
 
 <template>
-  <nav class="app-navbar">
+  <nav class="app-navbar" :class="{ 'full-width': isFullWidthPage }">
     <div class="navbar-content">
       <div class="navbar-brand" @click="router.push('/')">
         <h1>🚌 BusTour</h1>
@@ -72,14 +76,21 @@ const goToLogin = () => {
   top: 0;
   z-index: 1000;
   margin-bottom: 0;
+  width: 100%;
+}
+
+.app-navbar.full-width .navbar-content {
+  max-width: 100%;
+  padding: 1rem 2rem;
 }
 
 .navbar-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1rem 2rem;
   border-bottom: 1px solid #eee;
+  width: 100%;
 }
 
 .navbar-brand {

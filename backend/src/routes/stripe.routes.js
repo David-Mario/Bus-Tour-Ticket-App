@@ -13,4 +13,10 @@ router.post(
   stripeController.createCheckoutSession
 );
 
+router.get(
+  "/verify-session/:sessionId",
+  authMiddleware,
+  stripeController.verifySession
+);
+
 module.exports = router;

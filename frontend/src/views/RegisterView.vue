@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import { useRouter } from "vue-router";
+import { useToast } from "vue-toastification";
 
 const email = ref("");
 const password = ref("");
@@ -10,37 +11,45 @@ const confirmPassword = ref("");
 const loading = ref(false);
 const error = ref("");
 const router = useRouter();
+const toast = useToast();
 
 const register = async () => {
   error.value = "";
 
   if (!email.value || !password.value || !confirmPassword.value) {
     error.value = "Completează toate câmpurile";
+    toast.warning("Completează toate câmpurile");
     return;
   }
 
   if (password.value.length < 6) {
     error.value = "Parola trebuie să aibă cel puțin 6 caractere";
+    toast.warning("Parola trebuie să aibă cel puțin 6 caractere");
     return;
   }
 
   if (password.value !== confirmPassword.value) {
     error.value = "Parolele nu coincid";
+    toast.warning("Parolele nu coincid");
     return;
   }
 
   loading.value = true;
   try {
     await createUserWithEmailAndPassword(auth, email.value, password.value);
+    toast.success("Cont creat cu succes!");
     const redirectPath = router.currentRoute.value.query.redirect || "/";
     router.push(redirectPath);
   } catch (err) {
     if (err.code === "auth/email-already-in-use") {
       error.value = "Acest email este deja înregistrat";
+      toast.error("Acest email este deja înregistrat");
     } else if (err.code === "auth/invalid-email") {
       error.value = "Email invalid";
+      toast.error("Email invalid");
     } else {
       error.value = "Eroare la înregistrare. Încearcă din nou.";
+      toast.error("Eroare la înregistrare. Încearcă din nou.");
     }
   } finally {
     loading.value = false;
@@ -118,10 +127,10 @@ const goToLogin = () => {
 .auth-card {
   background: white;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 2.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 800px;
 }
 
 h2 {
@@ -145,16 +154,19 @@ h2 {
 
 .form-group input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.875rem 1rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  background: #fafafa;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #1976d2;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .form-group input:disabled {

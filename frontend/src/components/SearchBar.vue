@@ -11,6 +11,7 @@ const tripsStore = useTripsStore();
 const cities = ref([]);
 const showTicketTypes = ref(false);
 const ticketDropdownRef = ref(null);
+const showFiltersModal = ref(false);
 
 const startCitySuggestions = ref([]);
 const endCitySuggestions = ref([]);
@@ -77,8 +78,19 @@ const selectEndCity = (city) => {
 };
 
 const searchTrips = () => {
+  filtersStore.applyFilters();
   tripsStore.fetchTrips();
   showTicketTypes.value = false;
+  showFiltersModal.value = false;
+};
+
+const applySort = (field, order) => {
+  filtersStore.setSort(field, order);
+  showFiltersModal.value = false;
+};
+
+const clearSort = () => {
+  filtersStore.setSort("", "asc");
 };
 
 const goToMyTickets = () => {
@@ -210,6 +222,81 @@ onUnmounted(() => {
       </div>
 
       <button class="search-btn" @click="searchTrips">Caută</button>
+      <button class="filters-btn" @click="showFiltersModal = true">Filtre</button>
+    </div>
+
+    <!-- Filters Modal -->
+    <div v-if="showFiltersModal" class="modal-overlay" @click="showFiltersModal = false">
+      <div class="filters-modal" @click.stop>
+        <h3>Filtrează și sortează</h3>
+        
+        <div class="sort-section">
+          <h4>Sortează după:</h4>
+          <div class="sort-options">
+            <div class="sort-group">
+              <label>Preț</label>
+              <div class="sort-buttons">
+                <button 
+                  :class="{ active: filtersStore.sortBy === 'price' && filtersStore.sortOrder === 'asc' }"
+                  @click="applySort('price', 'asc')"
+                >
+                  Crescător
+                </button>
+                <button 
+                  :class="{ active: filtersStore.sortBy === 'price' && filtersStore.sortOrder === 'desc' }"
+                  @click="applySort('price', 'desc')"
+                >
+                  Descrescător
+                </button>
+              </div>
+            </div>
+            
+            <div class="sort-group">
+              <label>Data plecării</label>
+              <div class="sort-buttons">
+                <button 
+                  :class="{ active: filtersStore.sortBy === 'departureDate' && filtersStore.sortOrder === 'asc' }"
+                  @click="applySort('departureDate', 'asc')"
+                >
+                  Crescător
+                </button>
+                <button 
+                  :class="{ active: filtersStore.sortBy === 'departureDate' && filtersStore.sortOrder === 'desc' }"
+                  @click="applySort('departureDate', 'desc')"
+                >
+                  Descrescător
+                </button>
+              </div>
+            </div>
+            
+            <div class="sort-group">
+              <label>Durată</label>
+              <div class="sort-buttons">
+                <button 
+                  :class="{ active: filtersStore.sortBy === 'duration' && filtersStore.sortOrder === 'asc' }"
+                  @click="applySort('duration', 'asc')"
+                >
+                  Crescător
+                </button>
+                <button 
+                  :class="{ active: filtersStore.sortBy === 'duration' && filtersStore.sortOrder === 'desc' }"
+                  @click="applySort('duration', 'desc')"
+                >
+                  Descrescător
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <button v-if="filtersStore.sortBy" class="clear-sort-btn" @click="clearSort">
+            Șterge sortarea
+          </button>
+        </div>
+
+        <div class="modal-actions">
+          <button class="primary-btn" @click="showFiltersModal = false">Închide</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -218,9 +305,10 @@ onUnmounted(() => {
 .search-bar {
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  padding: 1.5rem 2rem;
   margin-bottom: 2rem;
-  border-radius: 8px;
+  border-radius: 0;
+  width: 100%;
 }
 
 .search-container {
@@ -373,9 +461,158 @@ onUnmounted(() => {
   background: #1565c0;
 }
 
+.filters-btn {
+  padding: 0.75rem 2rem;
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.filters-btn:hover {
+  background: #555;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.filters-modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.filters-modal h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.sort-section {
+  margin-bottom: 1.5rem;
+}
+
+.sort-section h4 {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sort-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sort-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sort-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9375rem;
+}
+
+.sort-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sort-buttons button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-buttons button:hover {
+  background: #f5f5f5;
+}
+
+.sort-buttons button.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.clear-sort-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: #f44336;
+  border: 1px solid #f44336;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.clear-sort-btn:hover {
+  background: #ffebee;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.modal-actions .primary-btn {
+  padding: 0.75rem 1.5rem;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-actions .primary-btn:hover {
+  background: #1565c0;
+}
+
 @media (max-width: 768px) {
   .search-container {
     grid-template-columns: 1fr;
+  }
+  
+  .search-btn,
+  .filters-btn {
+    width: 100%;
   }
 }
 </style>

@@ -16,6 +16,24 @@ const CITIES = [
   "Bratislava", "Krakow", "Warsaw"
 ];
 
+const DESCRIPTIONS = [
+  "Călătorie confortabilă cu autobuz modern, dotat cu WiFi gratuit și prize USB. Servicii de calitate superioară pentru o experiență de neuitat.",
+  "Descoperă peisaje spectaculoase în timpul călătoriei. Autobuz climatizat cu scaune ergonomice pentru maximum confort.",
+  "Călătorie sigură și relaxantă cu personal profesionist. Opțiune ideală pentru excursii de o zi sau vacanțe mai lungi.",
+  "Autobuz premium cu facilități moderne: WiFi, prize, spațiu generos pentru bagaje. Confort și siguranță garantate.",
+  "Călătorie plăcută prin peisaje variate. Servicii de calitate cu atenție la detalii pentru satisfacerea tuturor pasagerilor.",
+  "Autobuz modern și confortabil pentru o călătorie relaxantă. Ideal pentru business sau vacanță, cu toate facilitățile necesare.",
+  "Experiență de călătorie superioară cu autobuz dotat cu cele mai moderne facilități. Confort, siguranță și servicii excelente.",
+  "Călătorie confortabilă prin orașe și peisaje frumoase. Autobuz cu spațiu generos și servicii de calitate pentru toți pasagerii.",
+  "Descoperă destinații noi într-un autobuz modern și confortabil. WiFi gratuit, prize USB și servicii profesioniste.",
+  "Călătorie sigură și plăcută cu autobuz premium. Ideal pentru excursii, cu toate facilitățile necesare pentru o experiență memorabilă.",
+  "Autobuz climatizat cu scaune confortabile și spațiu generos. Servicii de calitate pentru o călătorie relaxantă și sigură.",
+  "Călătorie confortabilă cu facilități moderne: WiFi, prize, spațiu pentru bagaje. Personal profesionist și atenție la detalii.",
+  "Experiență premium de călătorie cu autobuz dotat cu toate facilitățile. Confort, siguranță și servicii excelente pentru toți.",
+  "Descoperă noi destinații într-un autobuz modern și confortabil. Ideal pentru vacanțe sau călătorii de business.",
+  "Călătorie plăcută prin peisaje variate cu autobuz premium. Servicii de calitate superioară pentru satisfacerea tuturor nevoilor."
+];
+
 function getRandomCity(exclude = []) {
   return faker.helpers.arrayElement(
     CITIES.filter(city => !exclude.includes(city))
@@ -88,6 +106,8 @@ function generateTrip(index) {
 
     stops: generateStops(startCity, endCity),
 
+    description: faker.helpers.arrayElement(DESCRIPTIONS),
+
     createdAt: formatDate(new Date())
   };
 }
@@ -102,7 +122,7 @@ async function generateTrips(count = 25) {
   }
 
   await batch.commit();
-  console.log(`✅ ${count} trips generated successfully`);
+  console.log(` ${count} trips generated successfully`);
 }
 
 generateTrips()

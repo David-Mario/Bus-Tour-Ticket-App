@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch, onMounted } from "vue";
+import { computed, onMounted, onActivated } from "vue";
 import { useRouter } from "vue-router";
 import { useTripsStore } from "@/stores/trips";
 import { useFiltersStore } from "@/stores/filters";
@@ -12,23 +12,50 @@ const filtersStore = useFiltersStore();
 const filteredTrips = computed(() => {
   let result = [...tripsStore.trips];
 
-  if (filtersStore.startCity) {
+  // Apply filters
+  if (filtersStore.appliedStartCity) {
     result = result.filter((t) =>
-      t.startCity.toLowerCase().includes(filtersStore.startCity.toLowerCase())
+      t.startCity.toLowerCase().includes(filtersStore.appliedStartCity.toLowerCase())
     );
   }
 
-  if (filtersStore.endCity) {
+  if (filtersStore.appliedEndCity) {
     result = result.filter((t) =>
-      t.endCity.toLowerCase().includes(filtersStore.endCity.toLowerCase())
+      t.endCity.toLowerCase().includes(filtersStore.appliedEndCity.toLowerCase())
     );
   }
 
-  if (filtersStore.departureDate) {
-    result = result.filter((t) => t.startDate === filtersStore.departureDate);
+  if (filtersStore.appliedDepartureDate) {
+    result = result.filter((t) => t.startDate === filtersStore.appliedDepartureDate);
   }
 
-  result = result.filter((t) => t.availableSeats >= filtersStore.totalTickets);
+  result = result.filter((t) => t.availableSeats >= filtersStore.appliedTotalTickets);
+
+  // Apply sorting
+  if (filtersStore.sortBy) {
+    result.sort((a, b) => {
+      let aVal, bVal;
+      
+      if (filtersStore.sortBy === "price") {
+        aVal = a.price || 0;
+        bVal = b.price || 0;
+      } else if (filtersStore.sortBy === "departureDate") {
+        aVal = new Date(a.startDate + " " + (a.startTime || "00:00"));
+        bVal = new Date(b.startDate + " " + (b.startTime || "00:00"));
+      } else if (filtersStore.sortBy === "duration") {
+        aVal = a.durationHours || 0;
+        bVal = b.durationHours || 0;
+      } else {
+        return 0;
+      }
+
+      if (filtersStore.sortOrder === "asc") {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+  }
 
   return result;
 });
@@ -41,6 +68,11 @@ onMounted(() => {
   if (tripsStore.trips.length === 0) {
     tripsStore.fetchTrips();
   }
+});
+
+// Refresh trips when component becomes active (user navigates back)
+onActivated(() => {
+  tripsStore.fetchTrips();
 });
 </script>
 
@@ -73,6 +105,7 @@ onMounted(() => {
 .tours-view {
   width: 100%;
   min-height: 60vh;
+  max-width: 100%;
 }
 
 .loading,
@@ -88,6 +121,8 @@ onMounted(() => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
 }
 
 .error {
