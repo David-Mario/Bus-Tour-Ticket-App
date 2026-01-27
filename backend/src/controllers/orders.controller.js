@@ -5,7 +5,6 @@ const { SEATS_MIN, SEATS_MAX } = require("../validators/order.validator");
 const ORDERS_COLLECTION = "orders";
 const TRIPS_COLLECTION = "trips";
 
-/** Zile minim înainte de plecare pentru a permite anularea (regula 2.1) */
 const MIN_DAYS_BEFORE_DEPARTURE_TO_CANCEL = 2;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

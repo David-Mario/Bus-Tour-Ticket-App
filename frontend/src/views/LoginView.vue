@@ -113,7 +113,6 @@ const goToRegister = () => {
       </p>
     </div>
 
-    <!-- RESET PASSWORD MODAL -->
     <div v-if="showResetModal" class="modal-overlay" @click="closeResetModal">
       <div class="modal" @click.stop>
         <h3>Resetare parolă</h3>

@@ -12,7 +12,7 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: ToursView, // PUBLIC
+    component: ToursView,
   },
   {
     path: "/login",

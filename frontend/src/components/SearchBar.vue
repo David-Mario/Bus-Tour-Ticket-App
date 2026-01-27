@@ -225,7 +225,6 @@ onUnmounted(() => {
       <button class="filters-btn" @click="showFiltersModal = true">Filtre</button>
     </div>
 
-    <!-- Filters Modal -->
     <div v-if="showFiltersModal" class="modal-overlay" @click="showFiltersModal = false">
       <div class="filters-modal" @click.stop>
         <h3>Filtrează și sortează</h3>

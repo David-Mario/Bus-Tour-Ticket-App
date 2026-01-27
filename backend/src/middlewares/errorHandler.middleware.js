@@ -1,7 +1,3 @@
-/**
- * Eroare cu status HTTP pentru controller-e.
- * Exemplu: throw new AppError(404, "Călătoria nu a fost găsită");
- */
 class AppError extends Error {
   constructor(statusCode, message) {
     super(message);
@@ -9,10 +5,6 @@ class AppError extends Error {
   }
 }
 
-/**
- * Middleware centralizat pentru gestionarea erorilor.
- * Evită expunerea stack trace în producție.
- */
 function errorHandler(err, req, res, next) {
   console.error("[Error]", err);
 

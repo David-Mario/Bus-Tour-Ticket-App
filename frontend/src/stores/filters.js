@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
 export const useFiltersStore = defineStore("filters", () => {
-  // Input fields (not applied until search button is clicked)
   const startCity = ref("");
   const endCity = ref("");
   const departureDate = ref("");
@@ -13,15 +12,13 @@ export const useFiltersStore = defineStore("filters", () => {
     pensioner: 0,
   });
 
-  // Applied filters (used for actual filtering)
   const appliedStartCity = ref("");
   const appliedEndCity = ref("");
   const appliedDepartureDate = ref("");
   const appliedTotalTickets = ref(1);
 
-  // Sort options
-  const sortBy = ref(""); // "price", "departureDate", "duration"
-  const sortOrder = ref("asc"); // "asc" or "desc"
+  const sortBy = ref("");
+  const sortOrder = ref("asc");
 
   const totalTickets = computed(() => {
     return ticketTypes.value.adult + ticketTypes.value.student + ticketTypes.value.pensioner;

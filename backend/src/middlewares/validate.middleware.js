@@ -1,9 +1,5 @@
 const { validationResult } = require("express-validator");
 
-/**
- * Middleware care verifică rezultatul express-validator.
- * Dacă există erori, răspunde cu 400 și { success, message, errors }.
- */
 function validate(req, res, next) {
   const result = validationResult(req);
 

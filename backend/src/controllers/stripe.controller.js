@@ -185,15 +185,12 @@ exports.verifySession = async (req, res, next) => {
       throw new AppError(400, "Session ID lipsă");
     }
 
-    // Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    // Check if session belongs to this user
     if (session.metadata?.userId !== userId) {
       throw new AppError(403, "Nu ai permisiunea de a accesa această sesiune");
     }
 
-    // Check if payment was successful
     if (session.payment_status !== "paid") {
       return res.status(200).json({
         success: false,
@@ -202,7 +199,6 @@ exports.verifySession = async (req, res, next) => {
       });
     }
 
-    // Check if order already exists
     const existingOrder = await db
       .collection(ORDERS_COLLECTION)
       .where("stripeSessionId", "==", sessionId)
@@ -210,11 +206,9 @@ exports.verifySession = async (req, res, next) => {
       .get();
 
     if (!existingOrder.empty) {
-      // Order already exists, return it
       const orderDoc = existingOrder.docs[0];
       const orderData = orderDoc.data();
       
-      // Get trip data
       let trip = null;
       if (orderData.tripId) {
         const tripSnap = await db.collection(TRIPS_COLLECTION).doc(orderData.tripId).get();
@@ -228,7 +222,6 @@ exports.verifySession = async (req, res, next) => {
       });
     }
 
-    // Create order if payment is successful but order doesn't exist
     const { tripId, seatsCount } = session.metadata;
     if (!tripId) {
       throw new AppError(400, "Metadata incompletă în sesiunea Stripe");
@@ -237,7 +230,6 @@ exports.verifySession = async (req, res, next) => {
     const seats = parseInt(seatsCount || "1", 10);
     const order = await createOrderInFirestore(userId, userEmail, tripId, seats, sessionId);
 
-    // Get trip data for response
     const tripSnap = await db.collection(TRIPS_COLLECTION).doc(tripId).get();
     const tripData = tripSnap.exists ? { tripId: tripSnap.id, ...tripSnap.data() } : null;
 

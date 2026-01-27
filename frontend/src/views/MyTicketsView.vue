@@ -70,7 +70,6 @@ const verifyStripeSession = async (sessionId) => {
 
     const data = await response.json();
     if (data.success) {
-      // Order created or already exists, refresh orders and trips to update available seats
       await Promise.all([
         ordersStore.fetchMyOrders(),
         tripsStore.fetchTrips()
@@ -91,10 +90,8 @@ onMounted(async () => {
     return;
   }
 
-  // If coming from Stripe redirect, verify session and create order if needed
   if (route.query.session_id) {
     await verifyStripeSession(route.query.session_id);
-    // Remove session_id from URL
     router.replace({ query: {} });
   } else {
     ordersStore.fetchMyOrders();

@@ -12,7 +12,6 @@ const filtersStore = useFiltersStore();
 const filteredTrips = computed(() => {
   let result = [...tripsStore.trips];
 
-  // Apply filters
   if (filtersStore.appliedStartCity) {
     result = result.filter((t) =>
       t.startCity.toLowerCase().includes(filtersStore.appliedStartCity.toLowerCase())
@@ -31,7 +30,6 @@ const filteredTrips = computed(() => {
 
   result = result.filter((t) => t.availableSeats >= filtersStore.appliedTotalTickets);
 
-  // Apply sorting
   if (filtersStore.sortBy) {
     result.sort((a, b) => {
       let aVal, bVal;
@@ -70,7 +68,6 @@ onMounted(() => {
   }
 });
 
-// Refresh trips when component becomes active (user navigates back)
 onActivated(() => {
   tripsStore.fetchTrips();
 });
